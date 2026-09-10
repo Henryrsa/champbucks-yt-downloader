@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       uploader: info.uploader,
       viewCount: info.view_count,
       formatsAvailable: {
-        mp4: [...new Set(formats.filter((f:any)=>f.vcodec!=="none"&&f.height).map((f:any)=>f.height))].sort((a:number,b:number)=>a-b),
+        mp4: [...new Set<number>(formats.filter((f:any)=>f.vcodec!=="none"&&f.height).map((f:any)=>f.height))].sort((a:number,b:number)=>a-b),
         hasMp4
       },
       id: info.id,
