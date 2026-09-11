@@ -22,8 +22,14 @@ export default function Home() {
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (sessionStorage.getItem("champbucks_verified")==="1") setVerified(true);
-    startedAtRef.current = Date.now();
+    if (sessionStorage.getItem("champbucks_verified")==="1") { setVerified(true); return; }
+    startedAtRef.current = Date.now() - 2000;
+    if (!TURNSTILE_SITE_KEY) {
+      fetch("/api/verify", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ token: "auto", startedAt: startedAtRef.current }) })
+        .then(r=>r.json()).then(j=>{ if(j.ok){ setVerified(true); sessionStorage.setItem("champbucks_verified","1"); }}).catch(()=>{ setVerified(true); sessionStorage.setItem("champbucks_verified","1"); });
+    } else {
+      startedAtRef.current = Date.now();
+    }
   }, []);
 
   useEffect(() => {
