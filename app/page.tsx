@@ -71,7 +71,7 @@ export default function Home() {
           <p className="mt-3 text-zinc-600 text-base sm:text-lg">Paste any YouTube link. Pick quality. Download in seconds. Up to <b>320kbps</b> audio and <b>1080p</b> video.</p>
           <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs font-semibold">
             <span className="bg-white border border-amber-200 px-3 py-1 rounded-full">✓ No signup</span>
-            <span className="bg-white border border-amber-200 px-3 py-1 rounded-full">✓ Fast yt-dlp</span>
+            <span className="bg-white border border-amber-200 px-3 py-1 rounded-full">✓ Pure Node</span>
             <span className="bg-white border border-amber-200 px-3 py-1 rounded-full">✓ Mobile ready</span>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-                <p className="text-center text-xs text-zinc-500 mt-2">320kbps = studio quality • uses ffmpeg + yt-dlp</p>
+                <p className="text-center text-xs text-zinc-500 mt-2">Best available audio • Pure Node, no ffmpeg</p>
               </div>
             ) : (
               <div>
@@ -134,7 +134,7 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-                <p className="text-center text-xs text-zinc-500 mt-2">1080p requires merged video+audio via ffmpeg</p>
+                <p className="text-center text-xs text-zinc-500 mt-2">1080p muxed where available • Pure Node streaming</p>
               </div>
             )}
           </div>
@@ -146,18 +146,18 @@ export default function Home() {
               <>⬇ Download {tab.toUpperCase()} {tab==="mp3" ? mp3q : mp4q}</>
             )}
           </button>
-          <p className="text-center text-[11px] text-zinc-400 mt-3">For personal use only. Respect copyright. Powered by yt-dlp.</p>
+          <p className="text-center text-[11px] text-zinc-400 mt-3">For personal use only. Respect copyright. Powered by Pure Node.</p>
         </div>
 
         <div className="max-w-3xl mx-auto mt-8 grid sm:grid-cols-3 gap-3 text-center">
-          <div className="bg-white rounded-2xl p-4 border border-zinc-100"><div className="text-2xl">⚡</div><div className="font-bold text-sm mt-1">Ultra Fast</div><div className="text-xs text-zinc-500">yt-dlp direct extraction</div></div>
+          <div className="bg-white rounded-2xl p-4 border border-zinc-100"><div className="text-2xl">⚡</div><div className="font-bold text-sm mt-1">Ultra Fast</div><div className="text-xs text-zinc-500">Vercel-native streaming</div></div>
           <div className="bg-white rounded-2xl p-4 border border-zinc-100"><div className="text-2xl">🎧</div><div className="font-bold text-sm mt-1">320kbps MP3</div><div className="text-xs text-zinc-500">Up to highest audio quality</div></div>
           <div className="bg-white rounded-2xl p-4 border border-zinc-100"><div className="text-2xl">📱</div><div className="font-bold text-sm mt-1">Responsive</div><div className="text-xs text-zinc-500">Works on phone & desktop</div></div>
         </div>
       </main>
 
       <footer className="border-t border-amber-100 bg-white/60 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-zinc-500">© {new Date().getFullYear()} Champbucks • Built with Next.js + Tailwind + yt-dlp • Deploy on Vercel via GitHub</div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-zinc-500">© {new Date().getFullYear()} Champbucks • Built with Next.js + Tailwind • Vercel-native • No python needed</div>
       </footer>
     </div>
   );

@@ -1,0 +1,1 @@
+OK — Pure Node (no python/ffmpeg needed). Runs on Vercel serverless via @distube/ytdl-core streaming.

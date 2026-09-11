@@ -10,24 +10,19 @@ export async function POST(req: NextRequest) {
     if (!url || typeof url !== "string") return NextResponse.json({ error: "URL required" }, { status: 400 });
     if (!isValidYoutubeUrl(url)) return NextResponse.json({ error: "Invalid YouTube URL" }, { status: 400 });
     const info = await getVideoInfo(url.trim());
-    const thumbnails = info.thumbnails || [];
-    const thumb = thumbnails[thumbnails.length - 1]?.url || info.thumbnail || "";
-    const formats = info.formats || [];
-    const hasMp4 = formats.some((f: any) => f.vcodec !== "none" && f.height);
+    const formats = info._rawFormats || [];
+    const heights = [...new Set<number>(formats.filter((f:any)=>f.hasVideo && f.height).map((f:any)=>f.height))].sort((a:number,b:number)=>a-b);
     return NextResponse.json({
       title: info.title,
-      thumbnail: thumb,
+      thumbnail: info.thumbnail,
       duration: info.duration,
-      durationString: info.duration_string,
+      durationString: info.durationString,
       uploader: info.uploader,
-      viewCount: info.view_count,
-      formatsAvailable: {
-        mp4: [...new Set<number>(formats.filter((f:any)=>f.vcodec!=="none"&&f.height).map((f:any)=>f.height))].sort((a:number,b:number)=>a-b),
-        hasMp4
-      },
+      viewCount: info.viewCount,
+      formatsAvailable: { mp4: heights, hasMp4: heights.length>0 },
       id: info.id,
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Failed to fetch info", hint: "Ensure yt-dlp + ffmpeg installed. On Vercel use Docker or external API." }, { status: 500 });
+    return NextResponse.json({ error: e.message || "Failed to fetch info", hint: "Pure Node — no python/ffmpeg needed. If blocked, retry or try another video." }, { status: 500 });
   }
 }
