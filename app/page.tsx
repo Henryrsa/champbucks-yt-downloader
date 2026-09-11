@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const MP3_QUALITIES = ["64kbps","128kbps","192kbps","256kbps","320kbps"];
 const MP4_QUALITIES = ["144p","360p","480p","720p","1080p"];
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -13,8 +14,57 @@ export default function Home() {
   const [loadingInfo, setLoadingInfo] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [verified, setVerified] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [token, setToken] = useState("");
+  const startedAtRef = useRef<number>(Date.now());
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("champbucks_verified")==="1") setVerified(true);
+    startedAtRef.current = Date.now();
+  }, []);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY || verified) return;
+    const id = "turnstile-script";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("script");
+    s.id = id;
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    s.async = true;
+    document.head.appendChild(s);
+    const iv = setInterval(() => {
+      const w: any = (window as any).turnstile;
+      if (w && turnstileRef.current && !turnstileRef.current.hasChildNodes()) {
+        w.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (t: string) => setToken(t),
+          "expired-callback": () => setToken(""),
+        });
+        clearInterval(iv);
+      }
+    }, 500);
+    return () => clearInterval(iv);
+  }, [verified]);
+
+  const handleVerify = async () => {
+    if (!checked) { setError("Check 'I am not a bot' to continue"); return; }
+    if (TURNSTILE_SITE_KEY && !token) { setError("Complete the bot check"); return; }
+    setVerifying(true); setError("");
+    try {
+      const r = await fetch("/api/verify", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ token: token || "fallback-checked", startedAt: startedAtRef.current }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Verification failed");
+      setVerified(true);
+      sessionStorage.setItem("champbucks_verified","1");
+    } catch (e:any) { setError(e.message); }
+    finally { setVerifying(false); }
+  };
 
   const fetchInfo = async () => {
+    if (!verified) { setError("Sign in to confirm you're not a bot first"); return; }
     setError(""); setInfo(null);
     if (!url.trim()) { setError("Paste a YouTube link first"); return; }
     setLoadingInfo(true);
@@ -28,6 +78,7 @@ export default function Home() {
   };
 
   const handleDownload = async () => {
+    if (!verified) { setError("Sign in to confirm you're not a bot first"); return; }
     setError("");
     if (!url.trim()) { setError("Paste a YouTube link"); return; }
     setDownloading(true);
@@ -76,7 +127,26 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-amber-100 p-4 sm:p-6 max-w-3xl mx-auto">
+        {!verified && (
+          <div className="bg-white rounded-3xl shadow-xl border border-amber-100 p-5 sm:p-6 max-w-3xl mx-auto mb-6">
+            <h2 className="font-black text-lg text-center">Sign in to confirm you&apos;re not a bot</h2>
+            <p className="text-center text-sm text-zinc-500 mt-1">One quick check unlocks Fetch & Download</p>
+            <div className="mt-4 bg-zinc-50 border border-zinc-200 rounded-2xl p-4 flex flex-col gap-3">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)} className="w-5 h-5 rounded border-zinc-300 text-amber-500 focus:ring-amber-400" />
+                <span className="font-bold text-sm">I am not a bot</span>
+                <span className="ml-auto text-xs text-zinc-400">champbucks</span>
+              </label>
+              {TURNSTILE_SITE_KEY ? <div ref={turnstileRef} className="flex justify-center min-h-[65px]" /> : <p className="text-[11px] text-zinc-400 text-center">No keys needed — just check the box and continue. Add <code>NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> + <code>TURNSTILE_SECRET_KEY</code> to enable Cloudflare Turnstile.</p>}
+            </div>
+            {error && <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">{error}</div>}
+            <button onClick={handleVerify} disabled={verifying || !checked} className="mt-4 w-full py-3.5 rounded-2xl bg-black text-white font-black hover:bg-zinc-800 disabled:opacity-50">
+              {verifying ? "Verifying..." : "Confirm & Continue →"}
+            </button>
+          </div>
+        )}
+
+        <div className={`bg-white rounded-3xl shadow-xl border border-amber-100 p-4 sm:p-6 max-w-3xl mx-auto ${!verified ? "opacity-50 pointer-events-none" : ""}`}>
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">🔗</span>
@@ -88,12 +158,12 @@ export default function Home() {
                 onKeyDown={e=>e.key==="Enter" && fetchInfo()}
               />
             </div>
-            <button onClick={fetchInfo} disabled={loadingInfo} className="px-5 sm:px-6 py-3.5 rounded-2xl bg-black text-white font-bold hover:bg-zinc-800 disabled:opacity-50 text-sm whitespace-nowrap">
+            <button onClick={fetchInfo} disabled={loadingInfo || !verified} className="px-5 sm:px-6 py-3.5 rounded-2xl bg-black text-white font-bold hover:bg-zinc-800 disabled:opacity-50 text-sm whitespace-nowrap">
               {loadingInfo ? "Checking..." : "Fetch"}
             </button>
           </div>
 
-          {error && <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">{error}</div>}
+          {error && verified && <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">{error}</div>}
 
           {info && (
             <div className="mt-5 grid sm:grid-cols-[200px_1fr] gap-4 bg-amber-50/70 border border-amber-100 rounded-2xl p-3">
@@ -139,7 +209,7 @@ export default function Home() {
             )}
           </div>
 
-          <button onClick={handleDownload} disabled={downloading} className="mt-6 w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={handleDownload} disabled={downloading || !verified} className="mt-6 w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-base sm:text-lg shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
             {downloading ? (
               <><span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin"/> Converting {tab.toUpperCase()}...</>
             ) : (
